@@ -38,7 +38,7 @@ jobs:
 
       - name: Compile with Emscripten
         run: |
-          emcc src/main.cpp src/stam99.cpp \
+          emcc src/stam99.cpp \
             -o index.html \
             -Os \
             -I "raylib/src" \
