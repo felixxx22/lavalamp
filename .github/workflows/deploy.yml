@@ -1,0 +1,58 @@
+name: Build and Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - release
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: latest
+
+      - name: Clone and build Raylib for WASM
+        run: |
+          git clone --depth 1 https://github.com/raysan5/raylib.git
+          cd raylib/src
+          emmake make PLATFORM=PLATFORM_WEB -B
+
+      - name: Download HTML shell
+        run: curl -o minshell.html https://raw.githubusercontent.com/raysan5/raylib/master/src/minshell.html
+
+      - name: Compile with Emscripten
+        run: |
+          emcc src/main.cpp src/stam99.cpp \
+            -o index.html \
+            -Os \
+            -I "raylib/src" \
+            "raylib/src/libraylib.web.a" \
+            -s USE_GLFW=3 \
+            -s ASYNCIFY \
+            -s TOTAL_MEMORY=67108864 \
+            --shell-file minshell.html \
+            -DPLATFORM_WEB
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
