@@ -1,5 +1,5 @@
-build\
-.vscode\
+build/
+.vscode/
 index.html
 index.js
 index.wasm
